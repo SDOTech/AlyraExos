@@ -50,6 +50,7 @@ mapping (address => bool) private _whitelist; //only users in whitelist can prop
 bool private _isProposalSessionOpen = false; //define state of proposal session (true : users can wite their proposal, else not !)
 bool private _isVoteOpen = false; //if true, allowed users can vote for proposals
 uint proposalId = 0;
+uint winningProposalId = 0;
 Proposal[] public proposals;
 Voter[] public voters;
 
@@ -71,6 +72,8 @@ function openProposaRegistration() public onlyOwner {
     //Clean up the new Proposal session
     delete proposals; //clean proposals to start the new proposal registration
     proposalId = 0; //need to reset prosalId
+    winningProposalId = 0;
+    delete voters; //clean voters from old vote session
     
     //fire Events
     emit ProposalsRegistrationStarted(); 
@@ -125,6 +128,7 @@ function makeProposal(string memory description) public {
 }
 
 
+// -------------------------- TEMP
 // Elector list all current proposals
 function getCurrentProposals() public view returns (Proposal[] memory){
     
@@ -132,10 +136,11 @@ function getCurrentProposals() public view returns (Proposal[] memory){
     
     return proposals;
 }
+//Get Voters list 
 function getVoters() public view returns (Voter[] memory){
     return voters;
 }
-
+// --------------------------
 
 
 //Elector Vote for a selected proposal
@@ -167,6 +172,26 @@ function voteForProposal(uint _proposalId) public {
     //fire events
     emit Voted(msg.sender, _proposalId);
 }
+
+//Get Vote result
+function getVoteResults() public onlyOwner returns (Proposal[] memory) {
+    require(!_isVoteOpen,"Voting Session need to be closed !");
+    
+    // loop on vote to increment voteCount for proposal selected
+    for(uint i = 0; i<voters.length; i++){
+        
+        for(uint cptPr=0;cptPr<proposals.length;cptPr++){
+            if(proposals[cptPr].idProposal==voters[i].votedProposalId)
+                proposals[cptPr].voteCount++;
+        }
+    }
+    
+    return proposals;
+}
+
+
+
+
 
 
 }// end of smart contract
