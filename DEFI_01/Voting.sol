@@ -124,6 +124,7 @@ function makeProposal(string memory description) public {
     emit ProposalRegistered(proposalId);
 }
 
+
 // Elector list all current proposals
 function getCurrentProposals() public view returns (Proposal[] memory){
     
@@ -131,6 +132,11 @@ function getCurrentProposals() public view returns (Proposal[] memory){
     
     return proposals;
 }
+function getVoters() public view returns (Voter[] memory){
+    return voters;
+}
+
+
 
 //Elector Vote for a selected proposal
 function voteForProposal(uint _proposalId) public {
@@ -139,22 +145,24 @@ function voteForProposal(uint _proposalId) public {
     require(!_isProposalSessionOpen);//proposal session need to be closed
     require(_isVoteOpen,"Vote session is not Open");
     
+   
     //check if user has already vote for this session
     // NOTE pour relecture : je n'ai pas trouvé de foreach sur une collection typée en solidity (genre linQ et expression lambda en C#. Cela existe ? )
-    bool isVoteAllowed = false;
-    for(uint i = 0; i<=voters.length; i++){
-        if(voters[i].voterId == msg.sender && !voters[i].hasVoted){
-            isVoteAllowed = true;
+    bool isVoteAllowed = true;
+    for(uint i = 0; i<voters.length; i++){
+        if(voters[i].voterId == msg.sender && voters[i].hasVoted){
+            isVoteAllowed = false;
         }
     }
     require(isVoteAllowed, "You have already Vote in this Session !");
-    
+   
     //check if _proposalId exists (we know that proposalId start from 0 and each proposal increment +1)
     require(_proposalId<=proposalId,"proposalId not found !");
     
     
     Voter memory voter = Voter(true,true,_proposalId,msg.sender);
     voters.push(voter);
+    
     
     //fire events
     emit Voted(msg.sender, _proposalId);
