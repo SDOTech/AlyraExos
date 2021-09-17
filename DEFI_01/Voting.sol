@@ -50,7 +50,8 @@ mapping (address => bool) private _whitelist; //only users in whitelist can prop
 bool private _isProposalSessionOpen = false; //define state of proposal session (true : users can wite their proposal, else not !)
 bool private _isVoteOpen = false; //if true, allowed users can vote for proposals
 uint proposalId = 0;
-uint winningProposalId = 0;
+uint winningProposalId = 0; //0 mean no proposal is defined (proposalId start at 1) - *** NOTE DE RELECTURE : ce champ ne peut pas gérer des égalités de vote !
+uint maxcountForProposalId = 0;
 Proposal[] public proposals;
 Voter[] public voters;
 
@@ -74,6 +75,7 @@ function openProposaRegistration() public onlyOwner {
     proposalId = 0; //need to reset prosalId
     winningProposalId = 0;
     delete voters; //clean voters from old vote session
+    maxcountForProposalId = 0;
     
     //fire Events
     emit ProposalsRegistrationStarted(); 
@@ -168,23 +170,30 @@ function voteForProposal(uint _proposalId) public {
     Voter memory voter = Voter(true,true,_proposalId,msg.sender);
     voters.push(voter);
     
+    //increment voteCount with this new Vote
+    for(uint cptPr=0;cptPr<proposals.length;cptPr++){
+        if(proposals[cptPr].idProposal==_proposalId)
+        {
+            proposals[cptPr].voteCount++;
+            //if this new count is best than other it is temporally the Winner
+            if(proposals[cptPr].voteCount>maxcountForProposalId)
+            {
+                maxcountForProposalId = proposals[cptPr].voteCount;
+                winningProposalId = proposals[cptPr].idProposal; // NOTE RELECTURE : winningProposalId ne permet pas la gestion d'egalité dans les votes
+            }
+        }
+    }
     
     //fire events
     emit Voted(msg.sender, _proposalId);
 }
 
-//Get Vote result
+//Get Vote result : affect
 function getVoteResults() public onlyOwner returns (Proposal[] memory) {
+    
     require(!_isVoteOpen,"Voting Session need to be closed !");
     
-    // loop on vote to increment voteCount for proposal selected
-    for(uint i = 0; i<voters.length; i++){
-        
-        for(uint cptPr=0;cptPr<proposals.length;cptPr++){
-            if(proposals[cptPr].idProposal==voters[i].votedProposalId)
-                proposals[cptPr].voteCount++;
-        }
-    }
+    emit VotesTallied();
     
     return proposals;
 }
