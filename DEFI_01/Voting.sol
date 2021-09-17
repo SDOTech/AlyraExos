@@ -188,7 +188,7 @@ function voteForProposal(uint _proposalId) public {
     emit Voted(msg.sender, _proposalId);
 }
 
-//Get Vote result : affect
+//Get Vote results return list of Proposals entities
 function getVoteResults() public onlyOwner returns (Proposal[] memory) {
     
     require(!_isVoteOpen,"Voting Session need to be closed !");
@@ -199,6 +199,20 @@ function getVoteResults() public onlyOwner returns (Proposal[] memory) {
 }
 
 
+// Get the Winning proposal
+// Vote session need to be closed
+function getWinningProposal() public view returns (Proposal memory){
+    require(!_isVoteOpen,"Voting Session need to be closed !");
+    
+    Proposal memory result;
+    
+    for(uint cptPr=0;cptPr<proposals.length;cptPr++){
+        if(proposals[cptPr].idProposal==winningProposalId)
+            result =  proposals[cptPr];
+    }
+    
+    return result;
+}
 
 
 
