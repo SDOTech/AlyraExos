@@ -201,14 +201,17 @@ function getVoteResults() public onlyOwner returns (Proposal[] memory) {
 
 // Get the Winning proposal
 // Vote session need to be closed
-function getWinningProposal() public view returns (Proposal memory){
+function getWinningProposal() public returns (Proposal memory){
     require(!_isVoteOpen,"Voting Session need to be closed !");
     
     Proposal memory result;
     
     for(uint cptPr=0;cptPr<proposals.length;cptPr++){
         if(proposals[cptPr].idProposal==winningProposalId)
+        {
             result =  proposals[cptPr];
+            proposals[cptPr].isWinner = true;
+        }
     }
     
     return result;
