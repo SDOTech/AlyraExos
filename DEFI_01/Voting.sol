@@ -36,7 +36,7 @@ enum WorkflowStatus {
 mapping (address => Voter) private _voters; //only users in whitelist can propose and vote
 uint winningProposalId;
 Proposal[] public proposals;
-Voter[] public voters;
+//Voter[] public voters;
 WorkflowStatus _workflowStatus;
 
 // ====== Events ====== 
@@ -84,9 +84,7 @@ function openProposaRegistration() public onlyOwner {
     
     //Clean up the new Proposal session
     delete proposals; //clean proposals to start the new proposal registration
-  
-    delete voters; //clean voters from old vote session
-    
+
     //fire Events
     emit ProposalsRegistrationStarted(); 
     emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.ProposalsRegistrationStarted);
