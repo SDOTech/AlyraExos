@@ -1,17 +1,31 @@
-pragma solidity 0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.2;
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/math/SafeMath.sol";
 
 contract PullPayment {
-
-    mapping(address => uint) credits;
-
-    function pay(address to) payable external {
-        credits[to] += msg.value; 
-    }
-
-    function withdraw() external {
-        uint refund = credits[msg.sender];
-       //(bool success, ) = msg.sender.call.value(refund)("");
-       (bool success, ) = msg.sender.call{value:refund}("");
-        require(success);
-    }
+  
+  using SafeMath for uint256;
+  mapping (address => uint256) public payments;
+  uint256 public totalPayments;
+  
+  /**
+  * @dev Called by the payer to store the sent amount as credit to be pulled.
+  * @param dest The destination address of the funds.
+  * @param amount The amount to transfer.
+  */
+  function asyncSend(address dest, uint256 amount) internal {
+      payments[dest] = payments[dest].add(amount);
+      totalPayments = totalPayments.add(amount);
+  }
+  /**
+  * @dev withdraw accumulated balance, called by payee.
+  */
+  function withdrawPayments() public {
+      require(payments[msg.sender] != 0);
+      
+      totalPayments = totalPayments.sub(payments[msg.sender]);
+      payments[msg.sender] = 0;
+     
+      msg.sender.transfer(payments[msg.sender]);
+  }
 }
