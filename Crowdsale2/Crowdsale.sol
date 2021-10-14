@@ -47,3 +47,17 @@ contract Crowdsale {
       emit PayEther(payee, payment, now);
   }
 }
+
+/*
+
+
+Revoir la logique du remboursement et l’aligner avec le processus de la collecte des fonds. Il est fortement conseillé d’utiliser le pattern PullPayment.
+Explication : Actuellement, un investisseur ne peut pas être sur de pouvoir récupérer ses fonds envoyés. En effet, lors de l’envoi des ethers vers le Crowdsale par un investisseur le smart contract effectue immédiatement un transfert du montant reçu vers l’escrow wallet.
+Imaginons le scénario suivant: - Un investisseur envoie 2 ETH au Crowdsale. - Après 2h, l’investisseur n’est plus emballé et préfère récupérer ses 2 ETH. - L’investisseur fait alors appelle à la fonction withdrawPayments, sauf que cette dernière va lever une exception et les fonds ne seront pas récupérés.
+Pourquoi ? Car, notre contrat à 0 ETH et donc il ne peut pas effectuer le remboursement.
+Solution ? - Laisser les ETHs sur le Crowdsale (pas recommandé et il y a un risque d’attaques). Effectuer un transfert des fonds collectés de l’adresse du wallet escrow vers le smart contract Crowdsale. - Déterminer une période de remboursement, avant de déclencher cette période il faut penser à effectuer un transfert des fonds collectés de l’adresse du wallet escrow vers le smart contract Crowdsale.
+
+
+
+
+*/
