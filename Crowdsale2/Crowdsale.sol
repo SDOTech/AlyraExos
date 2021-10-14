@@ -1,38 +1,49 @@
-pragma solidity ^0.8.0;
- 
+pragma solidity 0.6.11;
+
+import "github.com/OpenZeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract Crowdsale {
-
- 
-   address public owner; // the owner of the contract
-   address public escrow; // wallet to collect raised ETH
-   uint256 public savedBalance = 0; // Total amount raised in ETH
-   mapping (address => uint256) public balances; // Balances in incoming Ether
- 
-   // Initialization
-   constructor (address _escrow) {
-       owner = tx.origin;
-       // add address of the specific contract
-       escrow = _escrow;
-   }
+  using SafeMath for uint256;
+  
+  address public owner; // the owner of the contract
+  address payable public escrow; // wallet to collect raised ETH
+  uint256 public savedBalance = 0; // Total amount raised in ETH
+  mapping (address => uint256) public balances; // Balances in incoming Ether
+  
+  // Event to record each time Ether is paid out
+  event PayEther(
+  address indexed _receiver,
+  uint256 indexed _value,
+  uint256 indexed _timestamp
+  );
+  
+  // Initialization
+  constructor (address payable _escrow) public{
+      owner = msg.sender;
+      // add address of the specific contract
+      escrow = _escrow;
+  }
   
    // function to receive ETH
-   receive() payable external {
-       balances[msg.sender] = balances[msg.sender]+msg.value;
-       savedBalance = savedBalance+msg.value;
-      
-       payable(escrow).transfer(msg.value);
-   }
+  receive() payable external {
+      balances[msg.sender] = balances[msg.sender].add(msg.value);
+      savedBalance = savedBalance.add(msg.value);
+      escrow.transfer(msg.value);
+      emit PayEther(escrow, msg.value, now);
+  }
   
    // refund investisor
-   function withdrawPayments() public{
-       address payee = msg.sender;
-       uint256 payment = balances[payee];
- 
-       //payee.send(payment);
-       payable(payee).transfer(payment);
- 
-       savedBalance = savedBalance-payment;
-       balances[payee] = 0;
-   }
+  function withdrawPayments() public{
+      address payable payee = msg.sender;
+      uint256 payment = balances[payee];
+      
+      require(payment != 0);
+      require(address(this).balance >= payment);
+    
+      savedBalance = savedBalance.sub(payment);
+      balances[payee] = 0;
+    
+      payee.transfer(payment);
+      emit PayEther(payee, payment, now);
+  }
 }
