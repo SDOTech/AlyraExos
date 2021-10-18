@@ -13,8 +13,5 @@ console.log('-----------------------------------');
 console.log('Matching Smart Contract Events');
 console.log('-----------------------------------');
 
-const simpleStorage = new web3.eth.Contract(abi, addr);
-simpleStorage.methods.get().call((err, data) => {
-  console.log(data);
-});
-
+const ebola = new web3.eth.Contract(abi, addr);
+ebola.methods.getInfo().call().then(console.log);
