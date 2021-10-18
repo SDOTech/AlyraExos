@@ -7,7 +7,7 @@ var  addr  = ('0xd804ab1667e940052614a5acd103dde4d298ce36');
     
 console.log("Address: "  +  addr);
     
-var  contractAddr  = ('0xb683d83a532e2cb7dfa5275eed3698436371cc9f');
+var  contractAddr  = ('0xb683d83a532e2cb7dfa5275eed3698436371cc9f'); //token BTU
 var  tknAddress  = (addr).substring(2);
     
 // '0x70a08231' est le hexa de la fonction "balanceOf" de l'ERC20
