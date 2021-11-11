@@ -1,0 +1,14 @@
+- Creation dossier
+- truffle unbox react
+- modifier fichier truffle-config.js (ex dans DappTruffle_testnet)
+- modif fichier 2_deploy_contract.js (pour rajouter le déploiement du contrat désiré)
+- déployer les package necessaires : 
+    - npm install @truffle/hdwallet-provider
+	- npm install dotenv
+- ajouter fichier .env (gestion de la config clé/valeur voir ex dans DappTruffle_testnet)
+- déployer le contrat sur l'environnement désiré (truffle migrate)
+
+- dans le dossier client :  
+    - npm install
+    - npm install react-bootstrap bootstrap
+    - npm run start
