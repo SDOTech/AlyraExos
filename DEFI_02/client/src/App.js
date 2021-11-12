@@ -8,6 +8,10 @@ import Alert from 'react-bootstrap/Alert';
 import Card from 'react-bootstrap/Card';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
+import Form from 'react-bootstrap/Form';
+import Stack from 'react-bootstrap/Stack';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Table from 'react-bootstrap/Table';
 
 import "./App.css";
 
@@ -69,12 +73,13 @@ class App extends Component {
     window.ethereum.on('accountsChanged', (accounts) => this.handleAccountsChanged(accounts));
     contract.events.WorkflowStatusChange().on('data', (event) => this.handleWorkflowStatusChange(event))
                                           .on('error', (error) => console.error(error));
+    contract.events.VoterRegistered().on('data', (event) => this.handleVoterAdded(event))
+                                .on('error', (error) => console.error(error));
 
     // ////////////////////////////////////
     // // enregistrements des événements //
     // ////////////////////////////////////
-    // contract.events.VoterAdded().on('data', (event) => this.handleVoterAdded(event))
-    //                             .on('error', (error) => console.error('Erreur VoterAdded : ' + Jsonify.stringify(error)));
+
     // contract.events.WorkflowStatusChange().on('data', (event) => this.handleWorkflowStatusChange(event))
     //                                       .on('error', (error) => console.error('Erreur WorkflowStatusChange : ' + Jsonify.stringify(error)));
     // contract.events.ProposalRegistered().on('data', (event) => this.handleProposalRegistered(event))
@@ -134,6 +139,8 @@ class App extends Component {
   }
 
   // ========== Handles events ==========
+  
+  // Account change on Metamask
   handleAccountsChanged = async(newAccounts) => {
     const { web3 } = this.state;
     const reloadedAccounts = await web3.eth.getAccounts();   
@@ -141,13 +148,60 @@ class App extends Component {
     this.setAccountInformation();
   }
 
+  // Workflow change
   handleWorkflowStatusChange = async(event) => {  
     const { contract, contractInformation } = this.state;
     contractInformation.currentWorkflowStatus = event.returnValues.newStatus;    
     this.getUIWorkflowStatus();
   }
 
+  handleVoterAdded = async(event) => {    
+    const { contract, contractInformation } = this.state;
+    contractInformation.votersAdresses = await contract.methods.getVotersAdresses().call(); 
+    this.setState({ contractInformation });    
+  }
 
+// ============== Contract interactions =================
+
+  // Interaction avec le smart contract pour ajouter un compte 
+  registeringUsers = async () => {
+    try {
+
+      const { accounts, contract } = this.state;
+      const address = this.address.value;
+
+      await contract.methods.registeringUsers(address).send({ from: accounts[0] }).then(response => {
+        alert('Enregistrement réussi', "ENREGISTREMENT");
+        this.address.value = '';
+      })
+    } catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
+  openProposaRegistration = async () =>{
+    try{
+      const { accounts, contract } = this.state;
+      await contract.methods.openProposaRegistration().send({ from: accounts[0] }).then(response => {
+        alert('Ouverture des enregistrements pour propositions', "SESSION PREOPOSITIONS");        
+      });
+    }catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
+  makeProposal = async() => {
+    try{
+      const { accounts, contract } = this.state;
+      const description = this.proposal.value;
+
+      await contract.methods.makeProposal(description).send({ from: accounts[0] }).then(response =>{
+        alert("Proposition enregistrée","ENREGISTREMENT");
+      })
+    }catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
 
 // **************************************** Render ****************************************
 
@@ -167,6 +221,7 @@ class App extends Component {
     
     //DIV Contract info
     let isOwner = (accountInformation && accountInformation.isOwner)
+    let isVoter = (accountInformation && accountInformation.canVote)
     let divIsOwner = <span className='badge bg-success'>owner</span>
 
     //DIV workflowStatus
@@ -175,39 +230,91 @@ class App extends Component {
     //DIV Admin buttons
     let divAdminButtons = <Card border="primary"><Card.Body>
       <Card.Title>Menu admin</Card.Title>
-      <Button variant="primary">Ajouter électeur</Button>{' '}
-      <Button variant="primary">Ouvrir la session</Button>{' '}
+      
+      <Button variant="primary" onClick={this.openProposaRegistration}>Ouvrir la session</Button>{' '}
       <Button variant="primary">Fermer la session</Button>{' '}
       <Button variant="primary">Ouvrir le vote </Button>{' '}
       <Button variant="primary">Fermer le vote</Button>{' '}
       <Button variant="success">Resultat</Button>
     </Card.Body></Card>
 
+    //DIV Add Voters
+    let divAddVoter =  
+    <Stack direction="horizontal" gap={3}>
+      <Form.Group>
+        <Form.Control type="text" id="address"
+          ref={(input) => { this.address = input }}
+        />
+      </Form.Group>
+      <Button onClick={this.registeringUsers}  >Ajouter un compte</Button>
+      </Stack>
+    
+    //DIV Registered voters
+    let divRegistreredVoters = <ListGroup variant="flush">       
+      <ListGroup.Item>      
+        <Table hover>      
+          <tbody>
+            {contractInformation && typeof (contractInformation.votersAdresses) !== 'undefined' && contractInformation.votersAdresses !== null &&
+              contractInformation.votersAdresses.map((a) => <tr key={a.toString()}><td>{a}</td></tr>)
+            }
+          </tbody>
+        </Table>
+      </ListGroup.Item>
+    </ListGroup>
 
-     // ======== DISPLAY RENDER ========
+    //DIV Add proposal
+    let divAddProposal = <Stack direction="horizontal" gap={3}><Form className="w-50"> 
+      <Form.Control type="text" id="proposal" placeholder="Votre proposition"
+        ref={(input) => { this.proposal = input }}
+      />        
+    </Form>
+    <Button onClick={this.makeProposal}  >Enregistrer</Button>
+    </Stack>
+
+
+
+    // ======== DISPLAY RENDER ========
     return (
       <div className="App">
         <h1>VOTING DAPP</h1>
-        <h2>ALYRA DEFI 02</h2>  
-       
-       {/* Header*/}
+        <h2>ALYRA DEFI 02</h2>
+
+        {/* Header*/}
         <Card>
-        <Card.Header>Status actuel : {uiStatus}</Card.Header>          
+          <Card.Header>Status actuel : {uiStatus}</Card.Header>
           <Card.Body>
-            <Card.Title>{divConnectionInfo}{isOwner? divIsOwner
-            :
-            ""}</Card.Title>
+            <Card.Title>{divConnectionInfo}{isOwner ? divIsOwner
+              :
+              ""}</Card.Title>
             <Card.Text>
-              {isOwner ? 
-              "Vous êtes l'administrateur, vous gérez les votes":
-              "Le système de vote est géré par un administrateur"}
-            </Card.Text>  
-              {isOwner ? divAdminButtons : ""}
+              {isOwner ?
+                "Vous êtes l'administrateur, vous gérez les votes" :
+                "Le système de vote est géré par un administrateur"}
+            </Card.Text>
+            {isOwner ? divAdminButtons : ""}
           </Card.Body>
         </Card>
 
+        {/* Voters list section */}
+        <Accordion >
+          <Accordion.Item eventKey="0">
+            <Accordion.Header>Liste des votants</Accordion.Header>
+            <Accordion.Body>
+            {isOwner ? divAddVoter : ""}
+             {divRegistreredVoters}
+            </Accordion.Body>
+          </Accordion.Item>
+          <Accordion.Item eventKey="1">
+          <Accordion.Header>Liste des propositions</Accordion.Header>
+          <Accordion.Body>
+            {isVoter ? divAddProposal:""}
+            TODO afficher la liste
+          </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
 
-        
+
+
       </div>
     );
   }

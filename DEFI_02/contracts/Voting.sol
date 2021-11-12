@@ -65,7 +65,7 @@ function registeringUsers(address _address) public onlyOwner {
                 && _workflowStatus != WorkflowStatus.VotingSessionEnded
                 );
     
-    _workflowStatus = WorkflowStatus.RegisteringVoters;
+    _workflowStatus = WorkflowStatus.registeringUsers;
     
     Voter memory voter = Voter(true,false,0);
     _voters[_address] = voter;
