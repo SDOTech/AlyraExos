@@ -16,11 +16,15 @@ import Table from 'react-bootstrap/Table';
 import "./App.css";
 
 class App extends Component {
-  state = { web3: null, accounts: null, contract: null };
+  state = { web3: null, accounts: null, contract: null, isWeb3Error:null };
 
   componentDidMount = async () => {
+   
+    let isWeb3Error;
     try {
       
+      isWeb3Error = false;
+
       // Get network provider and web3 instance.
       const web3 = await getWeb3();
 
@@ -29,19 +33,23 @@ class App extends Component {
 
       // Get the Voting contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = VotingContract.networks[networkId];
-     
+      const deployedNetwork = VotingContract.networks[networkId];          
+
       const instance = new web3.eth.Contract(
         VotingContract.abi,
         deployedNetwork && deployedNetwork.address,
-      );
+        
+      ); 
 
       // Set web3, accounts, and contract to the state, and then proceed with runInit 
-      this.setState({ web3, accounts, contract: instance }, this.runInit);
+      this.setState({ web3, accounts, contract: instance, isWeb3Error }, this.runInit);
+
     } catch (error) {      
+      isWeb3Error = true
+      this.setState({isWeb3Error})
       alert(
         `Failed to load web3, accounts, or contract. Check console for details.`,
-      );
+      );     
       console.error(error);
     }
   };
@@ -69,27 +77,25 @@ class App extends Component {
     this.setAccountInformation();
     this.getUIWorkflowStatus();
 
-    //Events management
+    // ********** Events management **********
     window.ethereum.on('accountsChanged', (accounts) => this.handleAccountsChanged(accounts));
     contract.events.WorkflowStatusChange().on('data', (event) => this.handleWorkflowStatusChange(event))
                                           .on('error', (error) => console.error(error));
     contract.events.VoterRegistered().on('data', (event) => this.handleVoterAdded(event))
                                 .on('error', (error) => console.error(error));
-
-    // ////////////////////////////////////
-    // // enregistrements des événements //
-    // ////////////////////////////////////
-
+ 
+    // TODO
     // contract.events.WorkflowStatusChange().on('data', (event) => this.handleWorkflowStatusChange(event))
-    //                                       .on('error', (error) => console.error('Erreur WorkflowStatusChange : ' + Jsonify.stringify(error)));
+    //                                      .on('error', (error) => console.error(error)); 
     // contract.events.ProposalRegistered().on('data', (event) => this.handleProposalRegistered(event))
-    //                                     .on('error', (error) => console.error('Erreur ProposalRegistered : ' + Jsonify.stringify(error)));
+    //                                    .on('error', (error) => console.error(error)); 
     // contract.events.Voted().on('data', (event) => this.handleVoted(event))
-    //                        .on('error', (error) => console.error('Erreur ProposalRegistered : ' + Jsonify.stringify(error)));
+    //                      .on('error', (error) => console.error(error));
+ 
     
   }
 
-  // Connected account (Need to be call at start and when user change metamast account !)
+  // Connected account (Need to be call at start and when user change metamastk account !)
   setAccountInformation = async() => {
     const { accounts, contract, contractInformation, web3 } = this.state;
     const connectedAccount = accounts[0];
@@ -206,12 +212,19 @@ class App extends Component {
 // **************************************** Render ****************************************
 
   render() {
-    const { accounts, accountInformation, contractInformation, UIWorkflowStatus } = this.state;
+    const { accounts, accountInformation, contractInformation, UIWorkflowStatus, isWeb3Error } = this.state;
 
+    //Loading
+    let divConnection = <Alert variant='info'>
+      Loading Web3, accounts, and contract...
+    </Alert>
+    let divIsWeb3Error = <Alert variant='danger'>
+      Impossible de se connecter, veuillez consulter les logs !
+    </Alert>
     if (!this.state.web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
+      return divConnection
     }
-
+   
     // ======== DEFINE ALL DIV SECTIONS ========
 
     //DIV User connection info 
@@ -275,7 +288,7 @@ class App extends Component {
 
     // ======== DISPLAY RENDER ========
     return (
-      <div className="App">
+      <div className="App">        
         <h1>VOTING DAPP</h1>
         <h2>ALYRA DEFI 02</h2>
 
