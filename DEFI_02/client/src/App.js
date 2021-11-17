@@ -83,13 +83,11 @@ class App extends Component {
     contract.events.WorkflowStatusChange().on('data', (event) => this.handleWorkflowStatusChange(event))
                                           .on('error', (error) => console.error(error));
     contract.events.VoterRegistered().on('data', (event) => this.handleVoterAdded(event))
-                                .on('error', (error) => console.error(error));
+                                     .on('error', (error) => console.error(error));
     contract.events.ProposalRegistered().on('data', (event) => this.handleProposalRegistered(event))
                                         .on('error', (error) => console.error(error));     
     contract.events.Voted().on('data', (event) => this.handleVoted(event))
-                         .on('error', (error) => console.error(error));
- 
-    
+                           .on('error', (error) => console.error(error));
   }
 
   // Connected account (Need to be call at start and when user change metamastk account !)
@@ -283,6 +281,18 @@ class App extends Component {
     }
   }
 
+  // Process vote result
+  processVoteResults = async () => {
+    try {
+      const { accounts, contract } = this.state;
+      await contract.methods.processVoteResults().send({ from: accounts[0] }).then(response => {
+        alert('Résultat du vote disponible !', "VOTE");
+      });
+    } catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
 // **************************************** Render ****************************************
 
   render() {
@@ -295,8 +305,7 @@ class App extends Component {
     if (!this.state.web3) {
       return divConnection
     }
-   
-    
+      
     
 
     // ======== DEFINE ALL DIV SECTIONS ========
@@ -327,7 +336,7 @@ class App extends Component {
       <Button variant="primary" onClick={this.closeProposalRegistrationn}>Fermer la session</Button>{' '}
       <Button variant="primary" onClick={this.openVote}>Ouvrir le vote </Button>{' '} 
       <Button variant="primary" onClick={this.closeVote}>Fermer le vote</Button>{' '}
-      <Button variant="success">Resultat</Button>
+      <Button variant="success" onClick={this.processVoteResults}>Resultat</Button>
     </Card.Body></Card>
 
     //DIV Add Voters
@@ -389,7 +398,23 @@ class App extends Component {
       </ListGroup.Item>
     </ListGroup>
     
-    
+    //DIV divResult
+    let divResult = <Accordion.Item eventKey="2"align="center" >
+      <Accordion.Header>Résultat du vote</Accordion.Header>
+      <Accordion.Body>
+        <Card style={{ width: '18rem' }}>
+          <Card.Body>
+            <Card.Title>Résultat du vote</Card.Title>
+            <Card.Text>
+           {contractInformation !=null  && contractInformation.winningProposal? 
+           contractInformation.winningProposal[0] + "(" + contractInformation.winningProposal[1] + " votes)": 
+           ""}            
+            </Card.Text>
+          </Card.Body>
+        </Card>
+      </Accordion.Body>
+    </Accordion.Item>
+
 
 
 
@@ -417,20 +442,21 @@ class App extends Component {
 
         {/* Voters list section */}
         <Accordion >
+        {isVoteTallied ? divResult:null}       
           <Accordion.Item eventKey="0">
             <Accordion.Header>Liste des votants</Accordion.Header>
             <Accordion.Body>
-            {isOwner ? divAddVoter : ""}
-             {divRegistreredVoters}
+              {isOwner ? divAddVoter : ""}
+              {divRegistreredVoters}
             </Accordion.Body>
           </Accordion.Item>
           <Accordion.Item eventKey="1">
-          <Accordion.Header>Liste des propositions</Accordion.Header>
-          <Accordion.Body>
-            {isVoter && isRegistrationOpen ? divAddProposal:""}
-            {divProposals}
-          </Accordion.Body>
-          </Accordion.Item>
+            <Accordion.Header>Liste des propositions</Accordion.Header>
+            <Accordion.Body>
+              {isVoter && isRegistrationOpen ? divAddProposal : ""}
+              {divProposals}
+            </Accordion.Body>
+          </Accordion.Item>           
         </Accordion>
 
 
