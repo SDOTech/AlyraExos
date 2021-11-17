@@ -14,6 +14,7 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import Table from 'react-bootstrap/Table';
 
 import "./App.css";
+import ListGroupItem from "react-bootstrap/esm/ListGroupItem";
 
 class App extends Component {
   state = { web3: null, accounts: null, contract: null, isWeb3Error:null };
@@ -83,14 +84,10 @@ class App extends Component {
                                           .on('error', (error) => console.error(error));
     contract.events.VoterRegistered().on('data', (event) => this.handleVoterAdded(event))
                                 .on('error', (error) => console.error(error));
- 
-    // TODO
-    // contract.events.WorkflowStatusChange().on('data', (event) => this.handleWorkflowStatusChange(event))
-    //                                      .on('error', (error) => console.error(error)); 
-    // contract.events.ProposalRegistered().on('data', (event) => this.handleProposalRegistered(event))
-    //                                    .on('error', (error) => console.error(error)); 
-    // contract.events.Voted().on('data', (event) => this.handleVoted(event))
-    //                      .on('error', (error) => console.error(error));
+    contract.events.ProposalRegistered().on('data', (event) => this.handleProposalRegistered(event))
+                                        .on('error', (error) => console.error(error));     
+    contract.events.Voted().on('data', (event) => this.handleVoted(event))
+                         .on('error', (error) => console.error(error));
  
     
   }
@@ -161,15 +158,26 @@ class App extends Component {
     this.getUIWorkflowStatus();
   }
 
+  //Voter added
   handleVoterAdded = async(event) => {    
     const { contract, contractInformation } = this.state;
     contractInformation.votersAdresses = await contract.methods.getVotersAdresses().call(); 
     this.setState({ contractInformation });    
   }
 
+  //Proposal registred
+  handleProposalRegistered = async(event) => {    
+    this.listAllProposals();
+  }
+
+  //Vote done
+  handleVoted = async(event) => {    
+    this.listAllProposals();
+  }
+
 // ============== Contract interactions =================
 
-  // Interaction avec le smart contract pour ajouter un compte 
+  // Add account
   registeringUsers = async () => {
     try {
 
@@ -185,17 +193,19 @@ class App extends Component {
     }
   }
 
-  openProposaRegistration = async () =>{
-    try{
+  // Open registration
+  openProposaRegistration = async () => {
+    try {
       const { accounts, contract } = this.state;
       await contract.methods.openProposaRegistration().send({ from: accounts[0] }).then(response => {
-        alert('Ouverture des enregistrements pour propositions', "SESSION PREOPOSITIONS");        
+        alert('Ouverture des enregistrements pour propositions', "SESSION PREOPOSITIONS");
       });
-    }catch (error) {
+    } catch (error) {
       alert(error, "ERREUR");
     }
   }
 
+  // Make a proposal
   makeProposal = async() => {
     try{
       const { accounts, contract } = this.state;
@@ -209,6 +219,70 @@ class App extends Component {
     }
   }
 
+  //List all proposals
+  listAllProposals = async () => {
+    try {
+      const { contract, contractInformation } = this.state;
+      contractInformation.proposals = await contract.methods.getProposals().call();
+      this.setState({ contractInformation });
+      this.setAccountInformation();
+    } catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
+  //Close proposal session
+  closeProposalRegistrationn = async () => {
+    try {
+      const { accounts, contract } = this.state;
+      await contract.methods.closeProposalRegistration().send({ from: accounts[0] }).then(response => {
+        alert('Fermeture des enregistrements pour propositions', "SESSION PREOPOSITIONS");
+      });
+    } catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
+  //Open vote session
+  openVote = async() => {
+    try{
+      const { accounts, contract } = this.state;
+      await contract.methods.openVoteSession().send({ from: accounts[0] }).then(response => {
+        alert('Ouverture du VOTE', "VOTE");
+      });
+
+    }catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
+  //Close vote session
+  closeVote = async () => {
+    try {
+      const { accounts, contract } = this.state;
+      await contract.methods.closeVoteSession().send({ from: accounts[0] }).then(response => {
+        alert('Fermeture du VOTE', "VOTE");
+      });
+    } catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
+  //Vote action
+  voteForProposal = async (index) => {
+    try {
+      //alert(index.target.value);
+      const { accounts, contract } = this.state;
+      await contract.methods.voteForProposal(index.target.value).send({from: accounts[0]}).then(response => {
+       alert("Vote effectué");
+      }).catch(error => {
+        alert("ERREUR:"+error);
+      });
+    } catch (error) {
+      alert(error, "ERREUR");
+    }
+  }
+
 // **************************************** Render ****************************************
 
   render() {
@@ -217,14 +291,14 @@ class App extends Component {
     //Loading
     let divConnection = <Alert variant='info'>
       Loading Web3, accounts, and contract...
-    </Alert>
-    let divIsWeb3Error = <Alert variant='danger'>
-      Impossible de se connecter, veuillez consulter les logs !
-    </Alert>
+    </Alert>   
     if (!this.state.web3) {
       return divConnection
     }
    
+    
+    
+
     // ======== DEFINE ALL DIV SECTIONS ========
 
     //DIV User connection info 
@@ -232,22 +306,27 @@ class App extends Component {
       accountInformation.account + " ": 
       "Veuillez connecter un compte"
     
-    //DIV Contract info
+    //Contract info
     let isOwner = (accountInformation && accountInformation.isOwner)
-    let isVoter = (accountInformation && accountInformation.canVote)
+    let isVoter = (accountInformation && accountInformation.canVote)    
+    let isRegistrationOpen = (UIWorkflowStatus!=null && UIWorkflowStatus === "ProposalsRegistrationStarted") ? true : false
+    let isVoteOpen = (UIWorkflowStatus!=null && UIWorkflowStatus === "VotingSessionStarted") ? true : false
+    let isVoteTallied = (UIWorkflowStatus!=null && UIWorkflowStatus === "VotesTallied") ? true : false
+    
+    //DIV owner
     let divIsOwner = <span className='badge bg-success'>owner</span>
 
     //DIV workflowStatus
     let uiStatus = UIWorkflowStatus
-
+    
     //DIV Admin buttons
     let divAdminButtons = <Card border="primary"><Card.Body>
       <Card.Title>Menu admin</Card.Title>
       
       <Button variant="primary" onClick={this.openProposaRegistration}>Ouvrir la session</Button>{' '}
-      <Button variant="primary">Fermer la session</Button>{' '}
-      <Button variant="primary">Ouvrir le vote </Button>{' '}
-      <Button variant="primary">Fermer le vote</Button>{' '}
+      <Button variant="primary" onClick={this.closeProposalRegistrationn}>Fermer la session</Button>{' '}
+      <Button variant="primary" onClick={this.openVote}>Ouvrir le vote </Button>{' '} 
+      <Button variant="primary" onClick={this.closeVote}>Fermer le vote</Button>{' '}
       <Button variant="success">Resultat</Button>
     </Card.Body></Card>
 
@@ -283,6 +362,34 @@ class App extends Component {
     </Form>
     <Button onClick={this.makeProposal}  >Enregistrer</Button>
     </Stack>
+
+    //DIV list proposals
+    const tdButtonVote = (index) => {
+      if (isVoter && isVoteOpen) {
+        return <>
+                 <Button onClick={ this.voteForProposal } value={index}>Voter</Button>&nbsp;
+               </>;
+      }else {
+        return <></>;
+      }
+    }
+    let divProposals = <ListGroup>
+      <ListGroup.Item>
+        <Table hover>
+          <tbody>
+            {contractInformation && contractInformation.proposals != null &&
+              contractInformation.proposals.map((prop, index) => 
+              <tr key={index}>               
+              <td>Description: {prop.description} ({prop[1]} vote(s))</td>
+              <td>{tdButtonVote(index)}</td>
+              </tr>)
+            }
+          </tbody>
+        </Table>
+      </ListGroup.Item>
+    </ListGroup>
+    
+    
 
 
 
@@ -320,8 +427,8 @@ class App extends Component {
           <Accordion.Item eventKey="1">
           <Accordion.Header>Liste des propositions</Accordion.Header>
           <Accordion.Body>
-            {isVoter ? divAddProposal:""}
-            TODO afficher la liste
+            {isVoter && isRegistrationOpen ? divAddProposal:""}
+            {divProposals}
           </Accordion.Body>
           </Accordion.Item>
         </Accordion>
