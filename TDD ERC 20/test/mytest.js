@@ -9,6 +9,7 @@ contract('ERC20', function (accounts) {
     const _decimals = new BN(18);
     const owner = accounts[0];
     const recipient = accounts[1];
+    const spender = accounts[2];
 
     beforeEach(async function () {
         this.ERC20Instance = await ERC20.new(_initialsupply, { from: owner });
@@ -40,8 +41,29 @@ contract('ERC20', function (accounts) {
         expect(balanceRecipientAfterTransfer).to.be.bignumber.equal(balanceRecipientBeforeTransfer.add(amount));
     });
 
-    it('test approuve', async function (){
-        let isOk = await this.ERC20Instance.approuve(accounts[1],100);
-        expect(isOk.be.true);
-    });
+    it('vérifie si un approve est bien effectué', async function (){
+        let allowanceSpenderBeforeApprove = await this.ERC20Instance.allowance(owner, spender);
+        let amount = new BN(10);
+      
+        await this.ERC20Instance.approve(spender, amount, {from: owner});
+      
+        let allowanceSpenderAfterApprove = await this.ERC20Instance.allowance(owner, spender);
+       
+        expect(allowanceSpenderAfterApprove).to.be.bignumber.equal(allowanceSpenderBeforeApprove.add(amount));
+      });
+      
+      it('vérifie si un transfer from est bien effectué', async function (){
+        let balanceOwnerBeforeTransfer = await this.ERC20Instance.balanceOf(owner);
+        let balanceRecipientBeforeTransfer = await this.ERC20Instance.balanceOf(recipient);
+        let amount = new BN(10);
+      
+        await this.ERC20Instance.approve(spender, amount, {from: owner});
+        await this.ERC20Instance.transferFrom(owner, recipient, amount, {from: spender});
+      
+        let balanceOwnerAfterTransfer = await this.ERC20Instance.balanceOf(owner);
+        let balanceRecipientAfterTransfer = await this.ERC20Instance.balanceOf(recipient);
+       
+        expect(balanceOwnerAfterTransfer).to.be.bignumber.equal(balanceOwnerBeforeTransfer.sub(amount));
+        expect(balanceRecipientAfterTransfer).to.be.bignumber.equal(balanceRecipientBeforeTransfer.add(amount));
+      });
 });
