@@ -6,7 +6,7 @@ contract('ERC20', function (accounts) {
     const _name = 'ALYRA';
     const _symbol = 'ALY';
     const _initialsupply = new BN(1000);
-    const _decimals = new BN(18);
+    const _decimals = new BN(0);
     const owner = accounts[0];
     const recipient = accounts[1];
     const spender = accounts[2];

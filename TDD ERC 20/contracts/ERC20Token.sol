@@ -7,4 +7,8 @@ contract ERC20Token is ERC20 {
     constructor(uint256 initialSupply) ERC20("ALYRA", "ALY") {
         _mint(msg.sender, initialSupply);
     }
+
+    function decimals() public view virtual override returns (uint8) {
+        return 0;
+    }
 }
