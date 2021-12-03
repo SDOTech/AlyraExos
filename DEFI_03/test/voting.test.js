@@ -25,9 +25,9 @@ contract("Voting", accounts => {
     const VotingInstance = await Voting.deployed();  
 
     //admin openProposaRegistration
-    const trx = VotingInstance.openProposaRegistration({ from: accounts[0] });    
-    assert.equal(VotingInstance._workflowStatus, Voting._workflowStatus.ProposalsRegistrationStarted, "WorkflowStatus not correct");
-    
+    const trx = await VotingInstance.openProposaRegistration({ from: accounts[0] });    
+    const currentStatus = await VotingInstance.getCurrentWorkflowStatus();
+    assert.equal(currentStatus, Voting.WorkflowStatus.ProposalsRegistrationStarted, "WorkflowStatus not correct");
 
   });
 
