@@ -26,7 +26,8 @@ contract("Voting", accounts => {
 
     //admin openProposaRegistration
     const trx = VotingInstance.openProposaRegistration({ from: accounts[0] });    
-    assert.equal(VotingInstance._workflowStatus.valueOf(),1, "WorkflowStatus not correct");    
+    assert.equal(VotingInstance._workflowStatus, Voting._workflowStatus.ProposalsRegistrationStarted, "WorkflowStatus not correct");
+    
 
   });
 
