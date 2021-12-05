@@ -33,7 +33,7 @@ contract("Voting", accounts => {
   // unregistred user cannot vote
   it("...user[2] cannot do a proposal (not whitelisted by admin)", async () => {
     const VotingInstance = await Voting.deployed();    
-    await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "User not whitelisted !");
+    await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "Action not allowed for this address");
   });
 
 
