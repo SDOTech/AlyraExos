@@ -182,10 +182,7 @@ contract Voting is Ownable {
 
     //Elector Vote for a selected proposal
     function voteForProposal(uint256 _proposalId) public {
-        require(
-            _voters[msg.sender].isRegistered,
-            "Action not allowed for this address"
-        ); //check if caller is allowed in whitelist
+        require(_voters[msg.sender].isRegistered, "User not whitelisted !"); //check if caller is allowed in whitelist
         require(
             _workflowStatus == WorkflowStatus.VotingSessionStarted,
             "Voting Session not started"
