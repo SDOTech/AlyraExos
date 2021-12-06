@@ -4,14 +4,21 @@ const truffleAssert = require('truffle-assertions');
 
 contract("Voting", accounts => {
 
-  // Should Register accounts[1] From account[0]
-  it("...should Register accounts[1] From account[0]", async () => {    
+  // Should Register accounts[1]-[3] From account[0]
+  it("...should Register accounts[1] & [3] From account[0]", async () => {    
     const VotingInstance = await Voting.deployed();
     
     await VotingInstance.registeringUsers(accounts[1], { from: accounts[0] });
     const registeredUser = await VotingInstance.getVoter(accounts[1], { from: accounts[0] });
-    assert.equal(registeredUser.isRegistered, true, "accounts[1] was not registered.");    
+    
+    assert.isTrue(registeredUser.isRegistered);
+
+    await VotingInstance.registeringUsers(accounts[3], { from: accounts[0] });
+    const secondUser = await VotingInstance.getVoter(accounts[3], { from: accounts[0] });    
+     assert.isTrue(secondUser.isRegistered);
   });
+
+  
 
 
   // Should NOT register twice accounts[1] from account[0]
@@ -95,6 +102,29 @@ contract("Voting", accounts => {
 
   });
 
+  //user cannot vote twice
+  it ("...user cannot vote twice", async () => {
+    const VotingInstance = await Voting.deployed();
+
+    truffleAssert.reverts(VotingInstance.voteForProposal(0, { from: accounts[1] }));
+  });
+
+  //user cannot vote after Vote session closed
+  it("...user cannot vote after Vote session closed", async () => {
+    const VotingInstance = await Voting.deployed();
+    
+    const txCloseVote = await VotingInstance.closeVoteSession({ from: accounts[0] });
+    truffleAssert.eventEmitted(txCloseVote, 'VotingSessionEnded');
+    truffleAssert.reverts( VotingInstance.voteForProposal(0, { from: accounts[3] }));
+  });
+
+  //admin process vote result, event should be emitted
+  it ("admin process vote result, event should be emitted", async () => {
+    const VotingInstance = await Voting.deployed();
+
+    const txProcessResult = await VotingInstance.processVoteResults({ from: accounts[0] });
+    truffleAssert.eventEmitted(txProcessResult, 'VotesTallied');       
+  });
   
  
 
