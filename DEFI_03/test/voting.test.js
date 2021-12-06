@@ -126,6 +126,14 @@ contract("Voting", accounts => {
     truffleAssert.eventEmitted(txProcessResult, 'VotesTallied');       
   }); 
   
+
+  //A winnig proposal should be returned
+  it ("A winnig proposal should be returned", async () => {
+    const VotingInstance = await Voting.deployed();
+
+    const proposal = await VotingInstance.getWinningProposal({ from: accounts[1] });
+    assert.isAbove(parseInt(proposal.voteCount), 0);
+  });
   
 
  
