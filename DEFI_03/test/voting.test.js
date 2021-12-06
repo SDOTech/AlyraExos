@@ -16,20 +16,25 @@ contract("Voting", accounts => {
   // Should NOT register twice accounts[1] from account[0]
   it("...should NOT register twice accounts[1] from account[0]", async () => {
     const VotingInstance = await Voting.deployed();  
-    await truffleAssert.reverts(VotingInstance.registeringUsers(accounts[1], { from: accounts[0] }), "Existing Address !");
+    await truffleAssert.reverts(VotingInstance.registeringUsers(accounts[1], { from: accounts[0] }));
   });
 
-  // check workflow status after admin open Proposal Registration
-  // workflowstatus should be ProposalsRegistrationStarted
+  // Check workflow status after admin open Proposal Registration
   it("...workflowstatus should be ProposalsRegistrationStarted", async () => {
     const VotingInstance = await Voting.deployed();  
-
-    //admin openProposaRegistration
+    
     const trx = await VotingInstance.openProposaRegistration({ from: accounts[0] });    
     const currentStatus = await VotingInstance.getCurrentWorkflowStatus();
     assert.equal(currentStatus, Voting.WorkflowStatus.ProposalsRegistrationStarted, "WorkflowStatus not correct");
   });
 
+   // unregistred user cannot do a proposal
+   it("...user[2] cannot do a proposal (not whitelisted by admin) - should fail", async () => {
+     const VotingInstance = await Voting.deployed();    
+     truffleAssert.reverts(VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}));
+   });
+
+  
   //check event after proposal done
   it("...event ProposalRegistered should be emited", async () => {
     const VotingInstance = await Voting.deployed();
@@ -38,13 +43,7 @@ contract("Voting", accounts => {
     truffleAssert.eventEmitted(tx, 'ProposalRegistered');
   });
 
-  // // unregistred user cannot vote
-  // it("...user[2] cannot do a proposal (not whitelisted by admin) - should fail", async () => {
-  //   const VotingInstance = await Voting.deployed();    
-  //   await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "Action not allowed for this address");
-  // });
-
-  //user make a proposal
+  //user allowed make a proposal
    it("...proposal should be recorded", async () => {
     const VotingInstance = await Voting.deployed();    
     
