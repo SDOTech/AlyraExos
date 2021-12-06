@@ -44,23 +44,23 @@ contract("Voting", accounts => {
   //   await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "Action not allowed for this address");
   // });
 
-  // //user make a proposal
-  //  it("...proposal should be recorded", async () => {
-  //   const VotingInstance = await Voting.deployed();    
+  //user make a proposal
+   it("...proposal should be recorded", async () => {
+    const VotingInstance = await Voting.deployed();    
     
-  //    //get proposal count 
-  //    let propCountBefore = await VotingInstance.getProposals({ from: accounts[1] }).length;
-  //    if (propCountBefore == null) {
-  //      propCountBefore = 0
-  //    }
-
-  //    const tx = await VotingInstance.makeProposal("Propal Test from accounts[1]", { from: accounts[1] });
-
-  //    let propCountAfter = await VotingInstance.getProposals({ from: accounts[1] }).length;     
-  //    const isGreater = propCountAfter > propCountBefore;    
-  //    assert.equal(isGreater, true, "proposal not recorded:" + propCountBefore + " - " + propCountAfter);
+     //get proposal count 
+     let propBefore = await VotingInstance.getProposals({ from: accounts[1] });
+     let countBefore = parseInt(propBefore.length);
+     countBefore  = null ?? 0
      
-  // });
+     const tx = await VotingInstance.makeProposal("Propal Test from accounts[1]", { from: accounts[1] });
+     
+     let propAfter = await VotingInstance.getProposals({ from: accounts[1] })
+     let countAfter = parseInt(propAfter.length);
+     const isGreater = countAfter > countBefore;    
+     assert.equal(isGreater, true, "proposal not recorded:" + countBefore + " - " + countAfter);
+     
+  });
  
 
 
