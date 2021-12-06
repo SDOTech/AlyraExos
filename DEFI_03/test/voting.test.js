@@ -30,29 +30,37 @@ contract("Voting", accounts => {
     assert.equal(currentStatus, Voting.WorkflowStatus.ProposalsRegistrationStarted, "WorkflowStatus not correct");
   });
 
-  // unregistred user cannot vote
-  it("...user[2] cannot do a proposal (not whitelisted by admin)", async () => {
-    const VotingInstance = await Voting.deployed();    
-    await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "Action not allowed for this address");
+  //check event after proposal done
+  it("...event ProposalRegistered should be emited", async () => {
+    const VotingInstance = await Voting.deployed();
+    const tx = await VotingInstance.makeProposal("Propal Test from accounts[1]", { from: accounts[1] });
+
+    truffleAssert.eventEmitted(tx, 'ProposalRegistered');
   });
 
-  //user make a proposal
-   it("...proposal should be recorded", async () => {
-    const VotingInstance = await Voting.deployed();    
-    
-     //get proposal count 
-     let propCountBefore = await VotingInstance.getProposals({ from: accounts[1] }).length;
-     if (propCountBefore == null) [
-      propCountBefore = 0
-     ]
+  // // unregistred user cannot vote
+  // it("...user[2] cannot do a proposal (not whitelisted by admin) - should fail", async () => {
+  //   const VotingInstance = await Voting.deployed();    
+  //   await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "Action not allowed for this address");
+  // });
 
-     const tx = await VotingInstance.makeProposal("Propal Test from accounts[1]", { from: accounts[1] });
-     let propCountAfter = await VotingInstance.getProposals({ from: accounts[1] }).length;
+  // //user make a proposal
+  //  it("...proposal should be recorded", async () => {
+  //   const VotingInstance = await Voting.deployed();    
+    
+  //    //get proposal count 
+  //    let propCountBefore = await VotingInstance.getProposals({ from: accounts[1] }).length;
+  //    if (propCountBefore == null) {
+  //      propCountBefore = 0
+  //    }
+
+  //    const tx = await VotingInstance.makeProposal("Propal Test from accounts[1]", { from: accounts[1] });
+
+  //    let propCountAfter = await VotingInstance.getProposals({ from: accounts[1] }).length;     
+  //    const isGreater = propCountAfter > propCountBefore;    
+  //    assert.equal(isGreater, true, "proposal not recorded:" + propCountBefore + " - " + propCountAfter);
      
-     const isGreater = propCountAfter > propCountBefore;
-    
-    assert.equal(isGreater, true, "proposal not recorded:"+propCountBefore+" - "+propCountAfter);
-  });
+  // });
  
 
 
