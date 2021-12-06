@@ -124,11 +124,9 @@ contract("Voting", accounts => {
 
     const txProcessResult = await VotingInstance.processVoteResults({ from: accounts[0] });
     truffleAssert.eventEmitted(txProcessResult, 'VotesTallied');       
-  });
+  }); 
   
- 
-
-
+  
 
  
 });
