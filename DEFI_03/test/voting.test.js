@@ -36,14 +36,26 @@ contract("Voting", accounts => {
     await truffleAssert.reverts( await VotingInstance.makeProposal("Propal Test from accounts[2]", {from: accounts[2]}), "Action not allowed for this address");
   });
 
-
-  // check if user[1] hasVoted
-  it("...user[1].has voted should be true after a proposal", async () => {
+  //user make a proposal
+   it("...proposal should be recorded", async () => {
     const VotingInstance = await Voting.deployed();    
     
-    await VotingInstance.makeProposal("Propal Test from accounts[1]", {from: accounts[1]})
-    const user = await VotingInstance.getVoter(accounts[1], { from: accounts[0] });    
-    assert.equal(user.hasVoted, true, "accounts[1].hasVoted is false !");
+     //get proposal count 
+     let propCountBefore = await VotingInstance.getProposals({ from: accounts[1] }).length;
+     if (propCountBefore == null) [
+      propCountBefore = 0
+     ]
+
+     const tx = await VotingInstance.makeProposal("Propal Test from accounts[1]", { from: accounts[1] });
+     let propCountAfter = await VotingInstance.getProposals({ from: accounts[1] }).length;
+     
+     const isGreater = propCountAfter > propCountBefore;
+    
+    assert.equal(isGreater, true, "proposal not recorded:"+propCountBefore+" - "+propCountAfter);
   });
+ 
+
+
+
  
 });
