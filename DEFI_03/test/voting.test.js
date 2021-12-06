@@ -13,6 +13,7 @@ contract("Voting", accounts => {
     assert.equal(registeredUser.isRegistered, true, "accounts[1] was not registered.");    
   });
 
+
   // Should NOT register twice accounts[1] from account[0]
   it("...should NOT register twice accounts[1] from account[0]", async () => {
     const VotingInstance = await Voting.deployed();  
@@ -46,8 +47,7 @@ contract("Voting", accounts => {
   //user allowed make a proposal
    it("...proposal should be recorded", async () => {
     const VotingInstance = await Voting.deployed();    
-    
-     //get proposal count 
+         
      let propBefore = await VotingInstance.getProposals({ from: accounts[1] });
      let countBefore = parseInt(propBefore.length);
      countBefore  = null ?? 0
@@ -59,7 +59,43 @@ contract("Voting", accounts => {
      const isGreater = countAfter > countBefore;    
      assert.equal(isGreater, true, "proposal not recorded:" + countBefore + " - " + countAfter);
      
+   });
+  
+  //admin close registration, allowed users cannot do a new proposal
+  it("... should not permit to add proposal after closing session", async () => {
+    const VotingInstance = await Voting.deployed();
+
+    const txclose = await VotingInstance.closeProposalRegistration({ from: accounts[0] });
+    
+    truffleAssert.eventEmitted(txclose, 'ProposalsRegistrationEnded');
+    truffleAssert.reverts(VotingInstance.makeProposal("Propal Test from accounts[1]", {from: accounts[1]}));
+    
   });
+
+  //user cannot vote before Vote session was opened
+  it("...user cannot vote before Vote session was opened", async () => {
+    const VotingInstance = await Voting.deployed();
+
+    truffleAssert.reverts(VotingInstance.voteForProposal(0, { from: accounts[1] }));
+  });
+
+  //user hasvoted should be true
+  it ("user hasvoted should be true", async () => {
+    const VotingInstance = await Voting.deployed();
+
+    const txOpenVote = await VotingInstance.openVoteSession({ from: accounts[0] });
+    truffleAssert.eventEmitted(txOpenVote, 'VotingSessionStarted');
+
+    let user = await VotingInstance.getVoter(accounts[1], { from: accounts[0] });
+    assert.isFalse(user.hasVoted);
+
+    const txVoteUser = await VotingInstance.voteForProposal(0, { from: accounts[1] });
+    user = await VotingInstance.getVoter(accounts[1], { from: accounts[0] });
+    assert.isTrue(user.hasVoted);
+
+  });
+
+  
  
 
 
